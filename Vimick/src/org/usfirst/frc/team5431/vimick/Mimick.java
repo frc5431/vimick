@@ -8,8 +8,6 @@ import java.io.IOException;
 import java.io.InputStreamReader;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
-import java.util.AbstractMap;
-import java.util.Map;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Arrays;
@@ -17,78 +15,120 @@ import java.util.List;
 
 public class Mimick {
 	public static final String sep = ",";
-	public static final double version = 1.0;
+	public static final double ver = 1.0;
 	public static final String header = "Mimick created by Team5431";
-	public static final String headerFormat = "%s\nVersion: %f\nArguments: %s\n";
-	public static volatile String formatString = "\n";
-	public static final List<String> arguments = new ArrayList<>();
-	public static final HashMap<String, Integer> argPair = new HashMap<>();
-
-	public static void addArguments(String ...args) {
-		arguments.addAll(Arrays.asList(args));
-	}
-
-	public static void build() {
-		StringBuilder b = new StringBuilder();
-		for(int ind = 0; ind < arguments.size(); ind++) {
-			argPair.put(arguments.get(ind), ind);
-			b.append("%.4f");
-			b.append(sep);
+	public static final String headerFormat = "%s\nVersion: %.1f\n%s\n";
+	
+	/*
+	public static void main(String args[]) {
+		try {
+			Observer o = new Observer("C:\\Users\\AcademyHSRobotics\\Downloads\\test.mimic");
+			o.addArguments("left","right","home");
+			o.prepare();
+			Stepper step = o.createStep();
+			step.set("left", 0.2);
+			step.set("home", true);
+			step.set("right", 0.1);
+			o.addStep(step);
+			o.save();
+			
+			Repeater r = new Repeater("C:\\Users\\AcademyHSRobotics\\Downloads\\test.mimic");
+			r.prepare();
+			List<Stepper> steps = r.getData();
+			for(Stepper stepr : steps) {
+				System.out.println("Left: " + stepr.get("left"));
+				System.out.println("Right: " + stepr.get("right"));
+				System.out.println("Home: " + stepr.get("home"));
+			}
+		} catch (MimickException e) {
+			e.printStackTrace();
 		}
-		b.setLength(b.length() - 1);
-		b.append("\n");
-		formatString = b.toString();
-	}
-
-	public static String buildHeader() {
-		StringBuilder b = new StringBuilder();
-		for(String arg : arguments) {
-			b.append(arg);
-			b.append(sep);
+		
+		p(formatString);
+		p(buildHeader());
+		try {
+			Header head = getHeader(buildHeader() + "sdfsdf");
+			p(Arrays.toString(head.arguments));
+			p(head.description);
+			p(String.valueOf(head.version));
+			p(getBody(buildHeader() + "sdfsdf"));
+		} catch (Exception e) {
+			e.printStackTrace();
 		}
-		b.setLength(b.length() - 1);
-		return String.format(headerFormat, header, version, b.toString()); 
+	}*/
+
+	public static class MimickException extends Exception {
+		public MimickException(String string) {
+			super(string);
+		}
+
+		private static final long serialVersionUID = 1L;
 	}
-
-	public static Header parseHeader(final String toParse) {
-
-	}
-
+	
 	public static class Header {
-		public String Description;
-		public String[] Arguments;
-		public double Version
-	}
-
-	public static class Pair {
-		public static <T, U> Map.Entry<T, U> of(T first, U second) {
-			return new AbstractMap.SimpleEntry<>(first, second);
+		public String description;
+		public String[] arguments;
+		public double version;
+		
+		public Header(final String parse) throws MimickException {
+			final String[] parts = parse.split("\n");
+			try {
+				description = parts[0];
+				version = Double.valueOf(parts[1].substring(parts[1].indexOf(": ") + 2));
+				arguments = parts[2].split(sep);
+			} catch(Exception err) {
+				throw new MimickException("Not a valid Mimick file");
+			}
+		}
+		
+		public String getDescription() {
+			return description;
+		}
+		
+		public String[] getArguments() {
+			return arguments;
+		}
+		
+		public double getVersion() {
+			return version;
+		}
+		
+		public boolean isCurrentVersion() {
+			return version == ver;
 		}
 	}
 	
 	public static class Stepper {
-		private double data[];
+		public volatile String formatString = "\n";
+		public HashMap<String, Integer> argPair;
+		public Double data[];
 
-		public Stepper(double ...args) throws Exception {
-			if(args.length != arguments.size()) {
-				throw new Exception("Arguments mismatch");
-			}
+		public Stepper(String format, HashMap<String, Integer> argP, Double ...args) {
+			formatString = format;
+			argPair = argP;
 			data = args;
 		}
 
-		public Stepper(final String parse) throws Exception {	
+		public Stepper(String format, HashMap<String, Integer> argP, final String parse) throws MimickException {	
 			final String parts[] = parse.split(sep);
-			if(parts.length != arguments.size()) {
-				throw new Exception("Arguments mismatch");
+			if(parts.length != argP.keySet().size()) {
+				throw new MimickException("Arguments mismatch");
 			}
-			data = new double[parts.length];
+			formatString = format;
+			argPair = argP;
+			data = new Double[parts.length];
 			for(int ind = 0; ind < data.length; ind++) {
 				data[ind] = Double.valueOf(parts[ind]);
 			}
 		}
 
 		public double get(String key) {
-			return data[argPair.get(key)];
+			try {
+				return data[argPair.get(key)];
+			} catch(Throwable ignored) {
+				System.err.println("Mimic Error: Failed to get key " + key);
+				return 0.0;
+			}
 		}
 
 		public boolean is(String key) {
@@ -98,177 +138,180 @@ public class Mimick {
 		public int round(String key) {
 			return ((Double) get(key)).intValue();
 		}
+		
+		public void set(String key, double value) {
+			try {
+				data[argPair.get(key)] = value;
+			} catch(Throwable ignored) {
+				System.err.println("Mimic Error: Failed to set value for " + key);
+			}
+		}
+		
+		public void set(String key, boolean value) {
+			set(key, (value) ? 1.0 : 0.0);
+		}
+		
+		public void set(String key, int value) {
+			set(key, ((Integer) value).doubleValue());
+		}
 
 		public String toString() {
-			return String.format(formatString, data);
+			return String.format(formatString, (Object[]) data);
 		}
 	}
-
-	/*
-	public static final String mimicFile = "/media/sda1/%s.mimic";
-	public static final String formatString = "%.2f,%.2f,%.2f,%.4f,%.4f,%d,%.2f,%.2f,%.2f\n"; //LEFT ENCODER, RIGHT ENCODER, GYRO ANGLE, LEFT POWER, RIGHT POWER, HOME, ELEVATOR_HEIGHT, INTAKE_TILT, INTAKE_SPEED
-
-	public static class Stepper {
-		public double leftDistance, rightDistance, angle, leftPower, rightPower, elevatorHeight, intakeTilt, intakeSpeed;
-		public boolean isHome;
-		
-		public Stepper(final double lD, final double rD, final double a, final double lP, final double rP, final boolean h, final double eH, final double iT, final double iS) {
-			leftDistance = lD;
-			rightDistance = rD;
-			angle = a;
-			leftPower = lP;
-			rightPower = rP;
-			isHome = h;
-			elevatorHeight = eH;
-			intakeTilt = iT;
-			intakeSpeed = iS;
-		}
-		
-		public Stepper(final String toParse) {
-			try {
-				final String parts[] = toParse.split(",");
-				leftDistance = getDouble(parts[0]);
-				rightDistance = getDouble(parts[1]);
-				angle = getDouble(parts[2]);
-				leftPower = getDouble(parts[3]);
-				rightPower = getDouble(parts[4]);
-				isHome = getBoolean(parts[5]); 
-				elevatorHeight = getDouble(parts[6]);
-				intakeTilt = getDouble(parts[7]);
-				intakeSpeed = getDouble(parts[8]);
-			} catch (Exception e) {
-				Titan.ee("MimicParse", e);
-			}
-		}
-		
-		private static final double getDouble(final String data) {
-			return getDouble(data, 0.0);
-		}
-		
-		private static final double getDouble(final String data, final double defaultValue) {
-			try {
-				return Double.parseDouble(data);
-			} catch (Throwable e) {
-				return defaultValue;
-			}
-		}
-		
-		private static final boolean getBoolean(final String data) {
-			return getBoolean(data, false);
-		}
-		
-		private static final boolean getBoolean(final String data, final boolean defaultValue) {
-			try {
-				return Integer.parseInt(data) == 1;
-			} catch (Throwable e) {
-				return defaultValue;
-			}
-		}
-		
-		public String toString() {
-			return String.format(formatString, leftDistance, rightDistance, angle, leftPower, rightPower, (isHome) ? 1 : 0, elevatorHeight, intakeTilt, intakeSpeed);
-		}
-	}*/
 	
 	public static class Observer {
-		private static FileOutputStream log = null;
-		private static boolean homed = false;
-		private static boolean saved = true;
+		private FileOutputStream log = null;
+		private boolean saved = true;
+		private final String filePath;
+		private volatile String formatString = "\n";
+		private List<String> arguments = new ArrayList<>();
+		private HashMap<String, Integer> argPair = new HashMap<>();
 		
-		public static void prepare(final String fileName) {
-			final String fName = String.format(mimicFile, fileName);
+		public Observer(final String fPath) {
+			filePath = fPath;
+		}
+		
+		public void addArguments(String ...args) {
+			arguments.addAll(Arrays.asList(args));
+		}
+		
+		public void prepare() throws MimickException {
 			try {
-				if(Files.deleteIfExists(new File(fName).toPath())) {
-					Titan.e("Deleted previous pathfinding data");
+				Files.deleteIfExists(new File(filePath).toPath());
+				log = new FileOutputStream(filePath);
+				StringBuilder ab = new StringBuilder();
+				StringBuilder b = new StringBuilder();
+				for(int ind = 0; ind < arguments.size(); ind++) {
+					ab.append(arguments.get(ind));
+					ab.append(sep);
+					argPair.put(arguments.get(ind), ind);
+					b.append("%.4f");
+					b.append(sep);
 				}
-				log = new FileOutputStream(fName);
+				ab.setLength(ab.length() - 1);
+				b.setLength(b.length() - 1);
+				b.append("\n");
+				formatString = b.toString();
+				log.write(String.format(headerFormat, header, ver, ab.toString()).getBytes(StandardCharsets.US_ASCII));
 				saved = false;
-				Titan.l("Created new pathfinding file");
 			} catch (IOException e) {
-				Titan.ee("Mimic", e);
+				throw new MimickException("Failed to create observer file! " + e.getMessage());
 			}
 		}
 		
-		public static void addStep(final Robot robot, final double driveVals[]) {
-			try {
-				final double lDistance = robot.getDriveBase().getLeftDistance();
-				final double rDistance = robot.getDriveBase().getRightDistance();
-				final float angle = robot.getDriveBase().getNavx().getYaw();
-				final double leftPower = driveVals[0];
-				final double rightPower = driveVals[1];
-				boolean home = robot.getTeleop().getLogitech().getRawButton(Titan.LogitechExtreme3D.Button.FIVE);
-				final double elevatorHeight = robot.getElevator().getUpPos();
-				final double intakeTilt = robot.getIntake().getTiltPosition();
-				double intakeSpeed = Constants.INTAKE_STOPPED_SPEED;
-				if(robot.getTeleop().getLogitech().getRawButton(Titan.LogitechExtreme3D.Button.TRIGGER)) {
-					intakeSpeed = Constants.OUTTAKE_SPEED;
-				} else if(robot.getTeleop().getLogitech().getRawButton(Titan.LogitechExtreme3D.Button.THREE)) {
-					intakeSpeed = Constants.INTAKE_SPEED;
+		public void addStep(final Stepper step) throws MimickException {
+			if(!saved) {
+				try {
+					log.write(step.toString().getBytes(StandardCharsets.US_ASCII));
+				} catch (IOException e) {
+					throw new MimickException("Failed to add step! " + e.getMessage());
 				}
-				
-				if(home && !homed) {
-					robot.getDriveBase().setHome();
-				}
-				if(!saved) log.write(new Stepper(lDistance, rDistance, angle, leftPower, rightPower, home, elevatorHeight, intakeTilt, intakeSpeed).toString().getBytes(StandardCharsets.US_ASCII));
-				homed = home;
-			} catch (Exception e) {
-				Titan.ee("Mimic", e);
 			}
 		}
 		
-		public static void saveMimic() {
+		public void addStep(Double ...data) throws MimickException {
+			addStep(new Stepper(formatString, argPair, data));
+		}
+		
+		public Stepper createStep() {
+			return new Stepper(formatString, argPair, new Double[arguments.size()]);
+		}
+		
+		public void save() throws MimickException {
 			try {
 				if(log == null || saved) return;
-				Titan.l("Finished observing");
 				log.flush();
 				log.close();
 				saved = true;
-				Titan.l("Saved the mimic data");
 			} catch (IOException e) {
-				Titan.ee("Mimic", e);
+				throw new MimickException("Failed to save mimic file! " + e.getMessage());
 			}
 		}
 	}
 	
 	public static class Repeater {
-		private static FileInputStream log = null;
-		private static BufferedReader reader = null;
-		private static final ArrayList<Stepper> pathData = new ArrayList<Stepper>();
+		private FileInputStream log = null;
+		private BufferedReader reader = null;
+		private List<String> arguments;
+		private volatile String formatString = "\n";
+		private HashMap<String, Integer> argPair = new HashMap<>();
+		private final ArrayList<Stepper> pathData = new ArrayList<Stepper>();
+		private final String filePath;
 		
-		public static void prepare(final String fileName) {
-			final String fName = String.format(mimicFile, fileName);
+		public Repeater(final String fPath) {
+			filePath = fPath;
+		}
+		
+		public Header prepare() throws MimickException {
 			try {
-				Titan.l("Loading the mimic file");
-				if(!Files.exists(new File(fName).toPath())) {
-					Titan.e("The requested mimic data was not found");
+				if(!Files.exists(new File(filePath).toPath())) {
+					throw new MimickException("The file" + filePath + " doesn't exist!");
 				}
 				
-				log = new FileInputStream(fName);
+				log = new FileInputStream(filePath);
 				InputStreamReader iReader = new InputStreamReader(log, StandardCharsets.US_ASCII);
 				reader = new BufferedReader(iReader);
 				pathData.clear(); //Clear all of the pathData
 				
+				StringBuilder h = new StringBuilder();
+				boolean parsedHeader = false;
+				Header header = null;
+				
 				String line;
 				while ((line = reader.readLine()) != null) {
-					try {
-						pathData.add(new Stepper(line));
-					} catch (Exception e) {
-						Titan.ee("MimicData", e);
+					if(!parsedHeader) {
+						if(!line.matches(".*[a-zA-Z].*")) {
+							header = new Header(h.toString());
+							arguments = Arrays.asList(header.arguments);
+							if(ver < header.version) {
+								throw new MimickException(
+										String.format("The Mimick file is newer than the current version (File: %.1f, Current: %.1f)", 
+												header.version, ver));
+							}
+							StringBuilder b = new StringBuilder();
+							for(int ind = 0; ind < arguments.size(); ind++) {
+								argPair.put(arguments.get(ind), ind);
+								b.append("%.4f");
+								b.append(sep);
+							}
+							b.setLength(b.length() - 1);
+							b.append("\n");
+							formatString = b.toString();
+							
+							try {
+								pathData.add(new Stepper(formatString, argPair, line));
+							} catch (Exception e) {
+								throw new MimickException("Failed to add first step! " + e.getMessage());
+							}	
+							
+							parsedHeader = true;
+						} else {
+							h.append(line);
+							h.append("\n");
+						}
+					} else {
+						try {
+							pathData.add(new Stepper(formatString, argPair, line));
+						} catch (Exception e) {
+							throw new MimickException("Failed to add step! " + e.getMessage());
+						}	
 					}
 				}
 			    
 				try {
 					reader.close();
 				} catch (Exception e) {
-					Titan.ee("Failed to close the mimic file", e);
+					throw new MimickException("Failed to close the file");
 				}
-				Titan.l("Loaded the mimic file");
+				
+				return header;
 			} catch (IOException e) {
-				Titan.ee("Mimic", e);
+				throw new MimickException("Failed to replay Mimick file! " + e.getMessage());
 			}
 		}
 	
-		public static ArrayList<Stepper> getData() {
+		public ArrayList<Stepper> getData() {
 			return pathData;
 		}
 	}
