@@ -3,6 +3,7 @@ package org.usfirst.frc.team5431.vimick;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
+import java.util.Set;
 
 import org.usfirst.frc.team5431.vimick.Mimick.MimickException;
 import org.usfirst.frc.team5431.vimick.Mimick.Stepper;
@@ -19,7 +20,7 @@ public class Transform {
 	private StepMode mode = StepMode.LEFT_ENCODER;
 	
 	public static class AbsoluteStep extends Stepper {
-		public AbsoluteStep(String format, HashMap<String, Integer> argP, Double[] data) throws MimickException {
+		public AbsoluteStep(final String format, final HashMap<String, Integer> argP, final Double[] data) throws MimickException {
 			super(format, argP, data);
 		}
 
@@ -59,12 +60,12 @@ public class Transform {
 		double left_pos = 0.0;
 		double right_pos = 0.0;
 		double c_x = position_offset_x / field_width;
-		double c_y = position_offset_y / field_height;
+		//double c_y = position_offset_y / field_height;
 		double c_a = 0.0;
 		double last_homed = 0.0;
-		List<Stepper> newSteps = new ArrayList<>();
+		final List<Stepper> newSteps = new ArrayList<>();
 		for(int ind = 0; ind < aSteps.size(); ind++) {
-			AbsoluteStep aStep = aSteps.get(ind);
+			final AbsoluteStep aStep = aSteps.get(ind);
 			final Stepper step = new Stepper(aStep.formatString, aStep.argPair, (Double[]) aStep.data);
 			
 			//final AbsoluteStep aStep = new AbsoluteStep(step.formatString, step.argPair, (Double[]) step.data);
@@ -74,7 +75,7 @@ public class Transform {
 			right_pos = step.get("right_encoder");
 			last_homed = aStep.yaw;
 			c_x = aStep.x;
-			c_y = aStep.y;
+			//c_y = aStep.y;
 			
 			
 			if(step.is("home")) {
@@ -121,7 +122,7 @@ public class Transform {
 		double c_a = 0.0;
 		double last_homed = 0.0;
 		boolean homed = false;
-		List<AbsoluteStep> newSteps = new ArrayList<>();
+		final List<AbsoluteStep> newSteps = new ArrayList<>();
 		for(int ind = 0; ind < pathData.size(); ind++) {
 			Stepper step = pathData.get(ind);
 			final AbsoluteStep aStep = new AbsoluteStep(step.formatString, step.argPair, (Double[]) step.data);
@@ -163,6 +164,34 @@ public class Transform {
 			homed = step.is("home");
 		}
 		return newSteps;
+	}
+	
+	public List<Node> toNodes(final List<AbsoluteStep> abs) {
+		final List<Node> nodes = new ArrayList<>();
+		for(final AbsoluteStep step : abs) {
+			final Node node = new Node(step.x, 1.0 - step.y);
+			for(final String key : step.argPair.keySet()) {
+				node.getProperties().put(key, step.get(key));
+			}
+			nodes.add(node);
+		}
+		return nodes;
+	}
+	
+	public List<AbsoluteStep> toSteps(final List<NodeDisplay> nDisp) throws MimickException {
+		final List<AbsoluteStep> steps = new ArrayList<>();
+		if(pathData.size() == 0) throw new MimickException("There must be at least one node to convert");
+		final Stepper format = pathData.get(0);
+		for(final NodeDisplay node : nDisp) {
+			final Set<String> keySet = node.getNode().getProperties().keySet();
+			final Double[] data = new Double[keySet.size()];
+			for(final String key : keySet) {
+				data[format.argPair.get(key)] = node.getNode().getProperties().get(key);
+			}
+			final AbsoluteStep step = new AbsoluteStep(format.formatString, format.argPair, data);
+			steps.add(step);
+		}
+		return steps;
 	}
 	
 	public List<Stepper> getData() {
