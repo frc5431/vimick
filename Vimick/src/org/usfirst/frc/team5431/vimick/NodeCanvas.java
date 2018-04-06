@@ -4,6 +4,8 @@ import java.awt.Color;
 import java.awt.Dimension;
 import java.awt.Graphics;
 import java.awt.Graphics2D;
+import java.awt.event.KeyEvent;
+import java.awt.event.KeyListener;
 import java.awt.event.MouseEvent;
 import java.awt.event.MouseListener;
 import java.io.File;
@@ -87,9 +89,10 @@ public class NodeCanvas extends JPanel {
 
 	public void addNode(final Node no) {
 		final NodeDisplay dis = new NodeDisplay(no);
+		final int index = nodes.size() - 1;
+		no.index = index;
 		nodes.add(dis);
 		add(dis);
-		final int index = nodes.size() - 1;
 		dis.addMouseListener(new MouseListener() {
 
 			@Override
@@ -120,5 +123,8 @@ public class NodeCanvas extends JPanel {
 
 		});
 	}
-
+	
+	public void removeNode(final Node no) {
+		nodes.remove(no.index);
+	}
 }

@@ -178,6 +178,7 @@ public class Mimick {
 		
 		public void prepare() throws MimickException {
 			try {
+				if(arguments.size() == 0) throw new MimickException("No arguments provided!");
 				Files.deleteIfExists(new File(filePath).toPath());
 				log = new FileOutputStream(filePath);
 				StringBuilder ab = new StringBuilder();
@@ -216,6 +217,12 @@ public class Mimick {
 		
 		public Stepper createStep() {
 			return new Stepper(formatString, argPair, new Double[arguments.size()]);
+		}
+		
+		public void addData(final List<Stepper> data) throws MimickException {
+			for(final Stepper step : data) {
+				addStep(step);
+			}
 		}
 		
 		public void save() throws MimickException {
@@ -313,6 +320,10 @@ public class Mimick {
 	
 		public ArrayList<Stepper> getData() {
 			return pathData;
+		}
+		
+		public List<String> getArguments() {
+			return arguments;
 		}
 	}
 }

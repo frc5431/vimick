@@ -5,7 +5,8 @@ import java.util.Map;
 
 public class Node {
 	private final Map<String, Double> properties;
-
+	public int index = 0;
+	
 	public Node(final Map<String, Double> props) {
 		this.properties = props;
 	}

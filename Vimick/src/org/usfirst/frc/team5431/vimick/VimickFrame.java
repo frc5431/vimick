@@ -4,14 +4,23 @@ import java.awt.FlowLayout;
 import java.awt.GridBagConstraints;
 import java.awt.GridBagLayout;
 import java.awt.GridLayout;
+import java.awt.event.ActionEvent;
+import java.awt.event.ActionListener;
+import java.awt.event.KeyEvent;
+import java.awt.event.KeyListener;
 import java.util.List;
 
+import javax.swing.JButton;
 import javax.swing.JFrame;
 import javax.swing.JScrollPane;
 import javax.swing.WindowConstants;
 import javax.swing.table.DefaultTableModel;
 
-public class VimickFrame extends JFrame {
+import org.usfirst.frc.team5431.vimick.Mimick.MimickException;
+import org.usfirst.frc.team5431.vimick.Mimick.Stepper;
+import org.usfirst.frc.team5431.vimick.Transform.AbsoluteStep;
+
+public class VimickFrame extends JFrame implements KeyListener {
 
 	/**
 	 * 
@@ -32,10 +41,42 @@ public class VimickFrame extends JFrame {
 		
 		add(canvas);
 		add(properties);
+		
+		JButton export = new JButton("Export");
+		export.addActionListener(new ActionListener() {
+			@Override
+			public void actionPerformed(ActionEvent arg0) {
+				//if(arg0 == ActionEvent.)
+				System.out.println("ACTION PERFORMED");
+			}
+		});
+		add(export);
 
-		canvas.addNode(new Node(0.5, 0.5));
-		canvas.addNode(new Node(0.6, 0.5));
-		canvas.addNode(new Node(0.65, 0.6));
+		this.addKeyListener(this);
+		this.requestFocus();
+		
+		Transform t = new Transform(324, 324, 20, 20); //324 inches by 324 inches
+		try {
+			t.parse("C:\\Users\\AcademyHSRobotics\\Downloads\\LEFT_LEFT_SWITCH.mimic");
+			List<AbsoluteStep> steps = t.toAbsolute();
+			for(AbsoluteStep step : steps) {
+				canvas.addNode(new Node(step.x, 1.0 - step.y));
+			}
+			
+			t.toRelative(steps);
+			t.save("C:\\Users\\AcademyHSRobotics\\Downloads\\Relative.mimic");
+			/*final List<Stepper> steps = t.getData();
+			System.out.println("Total steps: " + steps.size());
+			for(int ind = 0; ind < 1; ind++) {
+				System.out.print(steps.get(ind).toString());
+			}*/
+		} catch(MimickException err) {
+			err.printStackTrace();
+		}
+		
+		//canvas.addNode(new Node(0.5, 0.5));
+		//canvas.addNode(new Node(0.6, 0.5));
+		//canvas.addNode(new Node(0.65, 0.6));
 	}
 
 	public NodeCanvas getCanvas() {
@@ -69,5 +110,23 @@ public class VimickFrame extends JFrame {
 		}else {
 			properties.setModel(new DefaultTableModel());
 		}
+	}
+
+	@Override
+	public void keyPressed(KeyEvent e) {
+		// TODO Auto-generated method stub
+		
+	}
+
+	@Override
+	public void keyReleased(KeyEvent e) {
+		// TODO Auto-generated method stub
+		
+	}
+
+	@Override
+	public void keyTyped(KeyEvent e) {
+		// TODO Auto-generated method stub
+		
 	}
 }

@@ -2,6 +2,8 @@ package org.usfirst.frc.team5431.vimick;
 
 import java.awt.Color;
 import java.awt.Graphics;
+import java.awt.event.KeyEvent;
+import java.awt.event.KeyListener;
 import java.awt.event.MouseEvent;
 import java.awt.event.MouseListener;
 import java.awt.event.MouseMotionListener;
@@ -14,8 +16,9 @@ public class NodeDisplay extends JPanel {
 	 * 
 	 */
 	private static final long serialVersionUID = 1L;
+	public int index = 0;
 
-	private class DragListener implements MouseMotionListener, MouseListener {
+	private class DragListener implements MouseMotionListener, MouseListener, KeyListener {
 
 		private double mouseStartX, mouseStartY;
 
@@ -42,6 +45,24 @@ public class NodeDisplay extends JPanel {
 		@Override
 		public void mouseReleased(final MouseEvent e) {
 
+		}
+		
+		@Override
+		public void keyPressed(KeyEvent arg0) {
+			System.out.println("DELETE");
+			if(arg0.getID() == KeyEvent.VK_BACK_SPACE || arg0.getID() == KeyEvent.VK_DELETE) {
+				System.out.println("DELETE");
+			}
+		}
+
+		@Override
+		public void keyReleased(KeyEvent arg0) {
+			
+		}
+
+		@Override
+		public void keyTyped(KeyEvent arg0) {
+			
 		}
 
 		@Override
@@ -82,6 +103,7 @@ public class NodeDisplay extends JPanel {
 		final DragListener drag = new DragListener();
 		addMouseListener(drag);
 		addMouseMotionListener(drag);
+		addKeyListener(drag);
 	}
 
 	public Color getBorderColor() {
