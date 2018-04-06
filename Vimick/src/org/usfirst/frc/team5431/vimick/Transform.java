@@ -1,5 +1,6 @@
 package org.usfirst.frc.team5431.vimick;
 
+import java.io.File;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -189,6 +190,8 @@ public class Transform {
 				data[format.argPair.get(key)] = node.getNode().getProperties().get(key);
 			}
 			final AbsoluteStep step = new AbsoluteStep(format.formatString, format.argPair, data);
+			step.x = node.getNode().getX();
+			step.y = node.getNode().getY();
 			steps.add(step);
 		}
 		return steps;
@@ -196,6 +199,10 @@ public class Transform {
 	
 	public List<Stepper> getData() {
 		return pathData;
+	}
+	
+	public void save(final File fileObj) throws MimickException {
+		save(fileObj.getAbsolutePath());
 	}
 	
 	public void save(final String fileName) throws MimickException {
