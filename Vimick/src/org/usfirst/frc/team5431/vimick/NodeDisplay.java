@@ -97,7 +97,7 @@ public class NodeDisplay extends JPanel {
 	private final Node node;
 	private Color borderColor = Color.RED;
 	private boolean selected = false;
-
+	
 	public NodeDisplay(final Node no) {
 		this.node = no;
 		final DragListener drag = new DragListener();

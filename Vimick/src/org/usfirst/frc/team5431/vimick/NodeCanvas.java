@@ -81,10 +81,22 @@ public class NodeCanvas extends JPanel {
 			}
 			lastNode = node;
 		}
+		
+		final File currentFile = Vimick.getFrame().getCurrentFile();
+		if(currentFile == null) {
+			Vimick.getFrame().setTitle("Vimick");
+		}else {
+			Vimick.getFrame().setTitle(currentFile.getName() + " | Vimick");
+		}
 	}
 
 	public List<NodeDisplay> getNodes() {
 		return nodes;
+	}
+	
+	public void clearNodes() {
+		nodes.clear();
+		removeAll();
 	}
 
 	public void addNode(final Node no) {
