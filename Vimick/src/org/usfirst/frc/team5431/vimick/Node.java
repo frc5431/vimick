@@ -40,10 +40,12 @@ public class Node {
 	
 	public void setX(final double x) {
 		properties.put("X_POS", x);
+		Vimick.getFrame().getCanvas().flagChange();
 	}
 	
 	public void setY(final double y) {
 		properties.put("Y_POS", y);
+		Vimick.getFrame().getCanvas().flagChange();
 	}
 	
 	public boolean isHome() {

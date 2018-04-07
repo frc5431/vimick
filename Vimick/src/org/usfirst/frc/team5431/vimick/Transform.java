@@ -1,6 +1,7 @@
 package org.usfirst.frc.team5431.vimick;
 
 import java.io.File;
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -36,6 +37,7 @@ public class Transform {
 		position_offset_y = position_oy;
 	}
 
+	/*
 	public static void main(String args[]) {
 		Transform t = new Transform(324, 312, 160, 20);
 		try {
@@ -49,7 +51,7 @@ public class Transform {
 		} catch (MimickException err) {
 			err.printStackTrace();
 		}
-	}
+	}*/
 
 	public void parse(final String fileName) throws MimickException {
 		Mimick.Repeater repeat = new Mimick.Repeater(fileName);
@@ -58,7 +60,7 @@ public class Transform {
 		pathData = repeat.getData();
 	}
 
-	public void toRelative(final List<AbsoluteStep> aSteps) throws MimickException {
+	public void fromRelative(final List<AbsoluteStep> aSteps) throws MimickException {
 		double left_pos = 0.0;
 		double right_pos = 0.0;
 		double c_x = position_offset_x / field_width;
@@ -111,6 +113,7 @@ public class Transform {
 
 			// System.out.format("X %.4f Y %.4f THETA %.4f\n", aStep.x, aStep.y, aStep.yaw);
 		}
+		pathData = newSteps;
 		// return newSteps;
 	}
 
@@ -208,16 +211,8 @@ public class Transform {
 	public List<Stepper> getData() {
 		return pathData;
 	}
-
-	public void save(final File fileObj) throws MimickException {
-		save(fileObj.getAbsolutePath());
-	}
-
-	public void save(final String fileName) throws MimickException {
-		Mimick.Observer observe = new Mimick.Observer(fileName);
-		observe.addArguments((String[]) arguments.toArray());
-		observe.prepare();
-		observe.addData(pathData);
+	public void save(final File file) throws MimickException, IOException {
+		final Mimick.Observer observe = new Mimick.Observer(file, arguments, pathData);
 		observe.save();
 	}
 }

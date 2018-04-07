@@ -7,6 +7,8 @@ import java.awt.event.KeyListener;
 import java.awt.event.MouseEvent;
 import java.awt.event.MouseListener;
 import java.awt.event.MouseMotionListener;
+import java.util.HashSet;
+import java.util.Set;
 
 import javax.swing.JPanel;
 
@@ -16,58 +18,62 @@ public class NodeDisplay extends JPanel {
 	 * 
 	 */
 	private static final long serialVersionUID = 1L;
-	public int index = 0;
 
-	private class DragListener implements MouseMotionListener, MouseListener, KeyListener {
+	private class DragListener implements MouseMotionListener, MouseListener {
 
 		private double mouseStartX, mouseStartY;
-
+		
 		@Override
 		public void mouseClicked(final MouseEvent e) {
 		}
 
 		@Override
 		public void mouseEntered(final MouseEvent e) {
-
+			setBorderColor(Color.BLUE);
+			getParent().repaint();
 		}
 
 		@Override
 		public void mouseExited(final MouseEvent e) {
-
+			setBorderColor(Color.RED);
+			getParent().repaint();
 		}
 
 		@Override
 		public void mousePressed(final MouseEvent e) {
 			mouseStartX = e.getX();
 			mouseStartY = e.getY();
-		}
-
-		@Override
-		public void mouseReleased(final MouseEvent e) {
-
-		}
-		
-		@Override
-		public void keyPressed(KeyEvent arg0) {
-			System.out.println("DELETE");
-			if(arg0.getID() == KeyEvent.VK_BACK_SPACE || arg0.getID() == KeyEvent.VK_DELETE) {
-				System.out.println("DELETE");
+			
+			final Set<Integer> toAdd = new HashSet<>();
+			if (!Vimick.getFrame().getSelected().isEmpty() && e.isShiftDown()) {
+				int startingIndex = Vimick.getFrame().getSelected().iterator().next();
+				if (startingIndex > node.index) {
+					for (; startingIndex > node.index; --startingIndex) {
+						toAdd.add(startingIndex);
+					}
+				} else {
+					for (; startingIndex < node.index; ++startingIndex) {
+						toAdd.add(startingIndex);
+					}
+				}
+			} else {
+				toAdd.add(node.index);
 			}
+
+			if (e.isControlDown()) {
+				Vimick.getFrame().addSelected(toAdd);
+			} else {
+				Vimick.getFrame().setSelected(toAdd);
+			}
+			getParent().repaint();
 		}
 
 		@Override
-		public void keyReleased(KeyEvent arg0) {
-			
-		}
-
-		@Override
-		public void keyTyped(KeyEvent arg0) {
-			
+		public void mouseReleased(final MouseEvent e) {	
 		}
 
 		@Override
 		public void mouseDragged(final MouseEvent e) {
-			System.out.println(mouseStartY + " " + e.getYOnScreen());
 			double x = (e.getX() + getX() - mouseStartX) / (double) getParent().getHeight(),
 					y = (e.getY() + getY() - mouseStartY) / (double) (getParent().getHeight());
 			if(x > 1.0) {
@@ -96,14 +102,12 @@ public class NodeDisplay extends JPanel {
 
 	private final Node node;
 	private Color borderColor = Color.RED;
-	private boolean selected = false;
 	
 	public NodeDisplay(final Node no) {
 		this.node = no;
 		final DragListener drag = new DragListener();
 		addMouseListener(drag);
 		addMouseMotionListener(drag);
-		addKeyListener(drag);
 	}
 
 	public Color getBorderColor() {
@@ -122,7 +126,7 @@ public class NodeDisplay extends JPanel {
 	protected void paintComponent(final Graphics g) {
 		setBounds((int) (node.getX() * getParent().getWidth()), (int) (node.getY() * getParent().getHeight()), 20, 20);
 
-		if (selected) {
+		if (isSelected()) {
 			g.setColor(Color.GREEN);
 		} else {
 			g.setColor(borderColor);
@@ -138,10 +142,6 @@ public class NodeDisplay extends JPanel {
 	}
 
 	public boolean isSelected() {
-		return selected;
-	}
-
-	public void setSelected(boolean selected) {
-		this.selected = selected;
+		return Vimick.getFrame().getSelected().contains(node.index);
 	}
 }

@@ -59,6 +59,7 @@ public class NodeTableModel extends AbstractTableModel{
 		}else {
 			value.setValue(Double.parseDouble(val.toString()));
 		}
+		Vimick.getFrame().getCanvas().flagChange();
 		Vimick.getFrame().repaint();
 	}
 
